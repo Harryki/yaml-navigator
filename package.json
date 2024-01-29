@@ -1,8 +1,9 @@
 {
   "name": "yaml-navigator",
   "displayName": "yaml-navigator",
+  "publisher": "Yeonghun Ki",
   "description": "navigate files in yaml file",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -12,19 +13,23 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onLanguage:yaml"],
+  "activationEvents": [
+    "onLanguage:yaml"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [{
-      "command": "yaml-navigator.openFileOnPath",
-      "title": "Open File On Path"
-    }],
+    "commands": [
+      {
+        "command": "yaml-navigator.openFileOnPath",
+        "title": "Open File On Path"
+      }
+    ],
     "keybindings": [
       {
-          "command": "yaml-navigator.openFileOnPath",
-          "key": "alt+d",
-          "mac": "alt+d",
-          "when": "!terminalFocus"
+        "command": "yaml-navigator.openFileOnPath",
+        "key": "alt+d",
+        "mac": "alt+d",
+        "when": "!terminalFocus"
       }
     ]
   },
