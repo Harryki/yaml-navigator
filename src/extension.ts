@@ -3,6 +3,9 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import path from 'path';
+import { YamlFileReferenceDataProvider } from './yamlFileReference';
+import { findMatchesInText } from './utils';
+
 
 export function activate(context: vscode.ExtensionContext) {
 	// console.log('Congratulations, your extension "yaml-navigator" is now active!');
@@ -75,7 +78,40 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('vscode.open', url);
 	});
 
-	context.subscriptions.push(openFileOnPath);
+	let findAllFileReferences = vscode.commands.registerCommand('yaml-navigator.findAllFileReferences', function () {
+		// vscode.window.showInformationMessage('Hello find references!');
+		/**
+		 * To get the file references in the code base, user need to open the editor in a directory 
+		 * so the file you want to find references in other files is from your workspaceFolder
+		 */
+		const editor = vscode.window.activeTextEditor;
+		const workspaceFolders = vscode.workspace.workspaceFolders;
+
+		if (!editor || !workspaceFolders) return;
+		const projectPath = workspaceFolders[0].uri.fsPath;
+		const filePath = editor.document.fileName;
+		const targetFileName = path.basename(filePath)
+		// vscode.window.showInformationMessage(`Current file name: ${fileName}`);
+		console.log(`filePath: ${filePath}`)
+		console.log(`targetFileName: ${targetFileName}`)
+		console.log(`projectPath: ${projectPath}`)
+
+		vscode.workspace.findFiles('**/*.{yaml,yml}').then(uris => {
+			uris.forEach(uri => {
+				vscode.workspace.openTextDocument(uri).then(document => {
+					// const fileName = path.basename(uri.fsPath);
+					console.log(`Searching for occurrences of '${targetFileName}' in '${document.uri.fsPath}'`);
+					findMatchesInText(document, targetFileName);
+				});
+			});
+		});
+	});
+
+	context.subscriptions.push(openFileOnPath, findAllFileReferences);
+
+	const yamlFileReferenceProvider = new YamlFileReferenceDataProvider(context);
+	vscode.window.registerTreeDataProvider('yamlFileReference', yamlFileReferenceProvider);
+
 }
 // This method is called when your extension is deactivated
 export function deactivate() { }
