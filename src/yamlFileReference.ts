@@ -1,18 +1,5 @@
-import path from 'path';
 import * as vscode from 'vscode';
-// import * as json from 'jsonc-parser';
-
-class CodeLocation extends vscode.TreeItem {
-    constructor(public readonly uri: vscode.Uri, public readonly range: vscode.Range) {
-        super(path.basename(uri.fsPath), vscode.TreeItemCollapsibleState.None);
-        this.description = uri.fsPath;
-        this.command = {
-            command: 'codeUsage.showLocation',
-            title: '',
-            arguments: [uri, range]
-        };
-    }
-}
+import * as path from 'path';
 
 export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<CodeLocation> {
     private _onDidChangeTreeData: vscode.EventEmitter<CodeLocation | undefined> = new vscode.EventEmitter<CodeLocation | undefined>();
@@ -25,6 +12,8 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
         vscode.workspace.onDidChangeConfiguration(() => {
             this.refresh();
         });
+
+        this.onActiveEditorChanged();
     }
 
     private onActiveEditorChanged(): void {
@@ -51,43 +40,82 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
 
     getChildren(element?: CodeLocation): Thenable<CodeLocation[]> {
         if (element) {
-            return Promise.resolve([]);
+            return Promise.resolve(element.occurrences.map(range => new CodeLocation(element.resourceUri, range, [], vscode.TreeItemCollapsibleState.None)));
         } else {
-            const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-            if (rootPath) {
-                return vscode.workspace.findFiles('**/*', '**/node_modules/**').then(uris => {
-                    const promises = uris.map(uri => this.searchInFile(uri));
-                    return Promise.all(promises).then(locationsArray => {
-                        return locationsArray.reduce((acc, locations) => acc.concat(locations), []);
-                    });
-                });
-            } else {
-                return Promise.resolve([]);
-            }
+            return this.searchFilesForReferences().then(references => {
+                return Promise.resolve(references.map(reference => new CodeLocation(vscode.Uri.file(reference.filePath), undefined, reference.occurrences)));
+            });
         }
     }
-    searchInFile(uri: vscode.Uri): Thenable<CodeLocation[]> {
 
-        return vscode.workspace.openTextDocument(uri).then(document => {
-            const locations: CodeLocation[] = [];
-            const activeEditor = vscode.window.activeTextEditor;
-            // if there's no active editor, return
-            if (!activeEditor) return locations;
+    private async searchFilesForReferences(): Promise<ReferenceInfo[]> {
+        const activeEditor = vscode.window.activeTextEditor;
+        if (!activeEditor) {
+            return [];
+        }
 
-            const fileName = activeEditor ? path.basename(activeEditor.document.fileName) : '';
-            const searchString = path.basename(fileName)
-            const escpaedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/, '\\$&');
-            const regex = new RegExp(escpaedSearchString, 'g');
+        const fileName = path.basename(activeEditor.document.fileName);
+        const escapedSearchString = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escapedSearchString, 'g');
 
-            let match;
-            const text = document.getText();
-            while ((match = regex.exec(text)) !== null) {
-                const startPos = document.positionAt(match.index);
-                const endPos = document.positionAt(match.index + match[0].length);
-                const range = new vscode.Range(startPos, endPos);
-                locations.push(new CodeLocation(uri, range));
-            }
-            return locations;
+        const referenceInfoMap = new Map<string, ReferenceInfo>();
+
+        await vscode.workspace.findFiles('**/*', '**/node_modules/**').then(uris => {
+            const promises = uris.map(uri => {
+                return vscode.workspace.openTextDocument(uri).then(document => {
+                    const text = document.getText();
+                    let match;
+                    while ((match = regex.exec(text)) !== null) {
+                        const filePath = uri.fsPath;
+                        const start = document.positionAt(match.index);
+                        const end = document.positionAt(match.index + match[0].length);
+                        const range = new vscode.Range(start, end);
+                        const referenceInfo = referenceInfoMap.get(filePath) || { filePath: filePath, occurrences: [] };
+                        referenceInfo.occurrences.push(range);
+                        referenceInfoMap.set(filePath, referenceInfo);
+                    }
+                });
+            });
+            return Promise.all(promises);
         });
+
+        return Array.from(referenceInfoMap.values());
+    }
+}
+
+interface ReferenceInfo {
+    filePath: string;
+    occurrences: vscode.Range[];
+}
+
+class CodeLocation extends vscode.TreeItem {
+    constructor(
+        public readonly resourceUri: vscode.Uri,
+        public readonly range: vscode.Range | undefined,
+        public readonly occurrences: vscode.Range[] = [],
+        public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded
+    ) {
+        super(resourceUri, collapsibleState);
+
+        this.tooltip = `${resourceUri}`;
+
+        // this.description = this.occurrences.length > 0 ? `${this.occurrences.length} occurrences` : '';
+        if (range) {
+            // child tree item
+            this.command = {
+                command: 'codeUsage.showLocation',
+                title: '',
+                arguments: [resourceUri, range]
+            };
+
+            // TODO: update ReferenceInfo.occurences and CodeLocation.occurrences to be Occurrence[] and interface Occurrence { range: vscode.Range, preview: string }
+            // and replace range with occurrence 
+        } else {
+            // parent tree item
+            // file
+            const parts = this.resourceUri.path.split(/[\\\/]/);
+            this.description = parts[parts.length - 2];
+            this.iconPath = new vscode.ThemeIcon('file',)
+        }
     }
 }
