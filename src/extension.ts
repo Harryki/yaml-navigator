@@ -107,7 +107,14 @@ export function activate(context: vscode.ExtensionContext) {
 		});
 	});
 
-	context.subscriptions.push(openFileOnPath, findAllFileReferences);
+	let showLocation = vscode.commands.registerCommand('codeUsage.showLocation', (uri: vscode.Uri, range: vscode.Range) => {
+		vscode.window.showTextDocument(uri).then(editor => {
+			editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			editor.selection = new vscode.Selection(range.start, range.end);
+		});
+	})
+
+	context.subscriptions.push(openFileOnPath, findAllFileReferences, showLocation);
 
 	const yamlFileReferenceProvider = new YamlFileReferenceDataProvider(context);
 	vscode.window.registerTreeDataProvider('yamlFileReference', yamlFileReferenceProvider);
