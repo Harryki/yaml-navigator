@@ -71,24 +71,21 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
         return vscode.workspace.openTextDocument(uri).then(document => {
             const locations: CodeLocation[] = [];
             const activeEditor = vscode.window.activeTextEditor;
+            // if there's no active editor, return
             if (!activeEditor) return locations;
 
-            for (let line = 0; line < document.lineCount; line++) {
-                const text = document.lineAt(line).text;
-                // Perform your search here, for example:
-                // const regex = /your_search_word_or_pattern/g;
-                const fileName = activeEditor ? path.basename(activeEditor.document.fileName) : '';
-                const searchString = path.basename(fileName)
-                const escpaedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/, '\\$&');
-                const regex = new RegExp(escpaedSearchString, 'g');
+            const fileName = activeEditor ? path.basename(activeEditor.document.fileName) : '';
+            const searchString = path.basename(fileName)
+            const escpaedSearchString = searchString.replace(/[.*+?^${}()|[\]\\]/, '\\$&');
+            const regex = new RegExp(escpaedSearchString, 'g');
 
-                let match;
-                while ((match = regex.exec(text)) !== null) {
-                    const startPos = document.positionAt(match.index);
-                    const endPos = document.positionAt(match.index + match[0].length);
-                    const range = new vscode.Range(startPos, endPos);
-                    locations.push(new CodeLocation(uri, range));
-                }
+            let match;
+            const text = document.getText();
+            while ((match = regex.exec(text)) !== null) {
+                const startPos = document.positionAt(match.index);
+                const endPos = document.positionAt(match.index + match[0].length);
+                const range = new vscode.Range(startPos, endPos);
+                locations.push(new CodeLocation(uri, range));
             }
             return locations;
         });

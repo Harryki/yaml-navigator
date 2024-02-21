@@ -110,6 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 	let showLocation = vscode.commands.registerCommand('codeUsage.showLocation', (uri: vscode.Uri, range: vscode.Range) => {
 		vscode.window.showTextDocument(uri).then(editor => {
 			editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			console.log(`rage: ${range}`)
 			editor.selection = new vscode.Selection(range.start, range.end);
 		});
 	})
