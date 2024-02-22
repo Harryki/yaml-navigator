@@ -18,6 +18,14 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "yamlFileReference",
+          "name": "YAML File Reference"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "yaml-navigator.openFileOnPath",

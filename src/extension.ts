@@ -3,6 +3,9 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import path from 'path';
+import { YamlFileReferenceDataProvider } from './yamlFileReference';
+import { findMatchesInText } from './utils';
+
 
 export function activate(context: vscode.ExtensionContext) {
 	// console.log('Congratulations, your extension "yaml-navigator" is now active!');
@@ -75,7 +78,19 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand('vscode.open', url);
 	});
 
-	context.subscriptions.push(openFileOnPath);
+	let showLocation = vscode.commands.registerCommand('codeUsage.showLocation', (uri: vscode.Uri, range: vscode.Range) => {
+		vscode.window.showTextDocument(uri).then(editor => {
+			editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+			console.log(`rage: ${range}`)
+			editor.selection = new vscode.Selection(range.start, range.end);
+		});
+	})
+
+	context.subscriptions.push(openFileOnPath, showLocation);
+
+	const yamlFileReferenceProvider = new YamlFileReferenceDataProvider(context);
+	vscode.window.registerTreeDataProvider('yamlFileReference', yamlFileReferenceProvider);
+
 }
 // This method is called when your extension is deactivated
 export function deactivate() { }
