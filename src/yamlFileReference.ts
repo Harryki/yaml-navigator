@@ -40,7 +40,7 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
 
     getChildren(element?: CodeLocation): Thenable<CodeLocation[]> {
         if (element) {
-            return Promise.resolve(element.occurrences.map(range => new CodeLocation(element.resourceUri, range, [], vscode.TreeItemCollapsibleState.None)));
+            return Promise.resolve(element.occurrences.map(occurrence => new CodeLocation(element.resourceUri, occurrence, [], vscode.TreeItemCollapsibleState.None)));
         } else {
             return this.searchFilesForReferences().then(references => {
                 return Promise.resolve(references.map(reference => new CodeLocation(vscode.Uri.file(reference.filePath), undefined, reference.occurrences)));
@@ -70,8 +70,17 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
                         const start = document.positionAt(match.index);
                         const end = document.positionAt(match.index + match[0].length);
                         const range = new vscode.Range(start, end);
+                        // TODO: need to filter out unrelated files e.g. file name is the same but it's not related
+
                         const referenceInfo = referenceInfoMap.get(filePath) || { filePath: filePath, occurrences: [] };
-                        referenceInfo.occurrences.push(range);
+
+                        const line = document.lineAt(range!.start.line);
+                        const startOffset = range!.start.character;
+                        const endOffset = range!.end.character;
+                        const linehighlightStart = Math.max(0, startOffset - 1);
+                        const linehighlightEnd = Math.min(line.text.length, endOffset + 1);
+
+                        referenceInfo.occurrences.push({ range: range, preview: { text: line.text, highlights: [[linehighlightStart, linehighlightEnd]] } });
                         referenceInfoMap.set(filePath, referenceInfo);
                     }
                 });
@@ -83,16 +92,26 @@ export class YamlFileReferenceDataProvider implements vscode.TreeDataProvider<Co
     }
 }
 
+interface Preview {
+    text: string;
+    highlights: Array<[number, number]>;
+}
+
+interface Occurrence {
+    range: vscode.Range;
+    preview: Preview
+}
+
 interface ReferenceInfo {
     filePath: string;
-    occurrences: vscode.Range[];
+    occurrences: Occurrence[];
 }
 
 class CodeLocation extends vscode.TreeItem {
     constructor(
         public readonly resourceUri: vscode.Uri,
-        public readonly range: vscode.Range | undefined,
-        public readonly occurrences: vscode.Range[] = [],
+        public readonly occurrence: Occurrence | undefined,
+        public readonly occurrences: Occurrence[] = [],
         public readonly collapsibleState: vscode.TreeItemCollapsibleState = vscode.TreeItemCollapsibleState.Expanded
     ) {
         super(resourceUri, collapsibleState);
@@ -100,16 +119,15 @@ class CodeLocation extends vscode.TreeItem {
         this.tooltip = `${resourceUri}`;
 
         // this.description = this.occurrences.length > 0 ? `${this.occurrences.length} occurrences` : '';
-        if (range) {
+        if (occurrence !== undefined) {
             // child tree item
             this.command = {
                 command: 'codeUsage.showLocation',
                 title: '',
-                arguments: [resourceUri, range]
+                arguments: [resourceUri, occurrence.range]
             };
-
-            // TODO: update ReferenceInfo.occurences and CodeLocation.occurrences to be Occurrence[] and interface Occurrence { range: vscode.Range, preview: string }
-            // and replace range with occurrence 
+            // this.label = occurrence.preview
+            this.label = { label: occurrence.preview.text, highlights: occurrence.preview.highlights }
         } else {
             // parent tree item
             // file

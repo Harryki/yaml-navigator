@@ -30,10 +30,6 @@
       {
         "command": "yaml-navigator.openFileOnPath",
         "title": "Open File On Path"
-      },
-      {
-        "command": "yaml-navigator.findAllFileReferences",
-        "title": "Find references of current file"
       }
     ],
     "keybindings": [
@@ -41,12 +37,6 @@
         "command": "yaml-navigator.openFileOnPath",
         "key": "alt+d",
         "mac": "alt+d",
-        "when": "!terminalFocus"
-      },
-      {
-        "command": "yaml-navigator.findAllFileReferences",
-        "key": "alt+shift+d",
-        "mac": "alt+shift+d",
         "when": "!terminalFocus"
       }
     ]
