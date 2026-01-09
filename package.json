@@ -4,6 +4,7 @@
   "publisher": "YeonghunKi",
   "description": "navigate files in yaml file",
   "version": "1.0.0",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
