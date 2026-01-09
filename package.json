@@ -39,7 +39,17 @@
         "mac": "alt+d",
         "when": "!terminalFocus"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "YAML Navigator",
+      "properties": {
+        "yaml-navigator.createFileIfNotExists": {
+          "type": "boolean",
+          "default": false,
+          "description": "Create an empty file if the referenced file does not exist"
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

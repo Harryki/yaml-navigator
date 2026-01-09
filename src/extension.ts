@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
+import path from 'path';
 import { YamlFileReferenceDataProvider } from './yamlFileReference';
 import { initializeProviders, providerRegistry } from './providers';
 import { ReferenceService } from './services/referenceService';
@@ -31,8 +32,20 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 		if (!fs.existsSync(reference.resolvedPath)) {
-			vscode.window.showErrorMessage(`File does not exist: ${reference.resolvedPath}`);
-			return;
+			const config = vscode.workspace.getConfiguration('yaml-navigator');
+			const createIfNotExists = config.get<boolean>('createFileIfNotExists', false);
+
+			if (createIfNotExists) {
+				const dir = path.dirname(reference.resolvedPath);
+				if (!fs.existsSync(dir)) {
+					fs.mkdirSync(dir, { recursive: true });
+				}
+				fs.writeFileSync(reference.resolvedPath, '');
+				vscode.window.showInformationMessage(`Created new file: ${reference.resolvedPath}`);
+			} else {
+				vscode.window.showErrorMessage(`File does not exist: ${reference.resolvedPath}`);
+				return;
+			}
 		}
 
 		const url = vscode.Uri.file(reference.resolvedPath);
