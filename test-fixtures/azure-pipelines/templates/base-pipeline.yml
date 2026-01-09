@@ -1,0 +1,20 @@
+parameters:
+  - name: buildConfiguration
+    type: string
+    default: 'Debug'
+  - name: deployEnvironment
+    type: string
+    default: 'staging'
+
+stages:
+  - stage: Build
+    jobs:
+      - template: ../jobs/build-job.yml
+        parameters:
+          buildConfiguration: ${{ parameters.buildConfiguration }}
+
+  - stage: Deploy
+    jobs:
+      - template: ../jobs/deploy-job.yml
+        parameters:
+          environment: ${{ parameters.deployEnvironment }}

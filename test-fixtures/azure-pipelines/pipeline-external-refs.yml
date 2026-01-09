@@ -1,0 +1,24 @@
+trigger:
+  - main
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: MyOrg/pipeline-templates
+      ref: refs/heads/main
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Build
+    jobs:
+      - template: jobs/build.yml@templates
+      - template: jobs/test.yml@templates
+
+  - stage: Deploy
+    jobs:
+      - template: jobs/deploy.yml@templates
+        parameters:
+          environment: 'production'

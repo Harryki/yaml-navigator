@@ -1,0 +1,19 @@
+parameters:
+  - name: environment
+    type: string
+    default: 'staging'
+
+jobs:
+  - deployment: Deploy
+    displayName: 'Deploy to ${{ parameters.environment }}'
+    environment: ${{ parameters.environment }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - template: ../templates/steps/download-artifact.yml
+              parameters:
+                artifactName: 'build-output'
+
+            - script: echo "Deploying to ${{ parameters.environment }}"
+              displayName: 'Deploy application'

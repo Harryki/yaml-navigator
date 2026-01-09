@@ -1,0 +1,31 @@
+trigger:
+  - main
+  - develop
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  - template: templates/variables.yml
+
+stages:
+  - stage: Build
+    displayName: 'Build Stage'
+    jobs:
+      - template: jobs/build-job.yml
+        parameters:
+          buildConfiguration: 'Release'
+
+  - stage: Test
+    displayName: 'Test Stage'
+    dependsOn: Build
+    jobs:
+      - template: jobs/test-job.yml
+
+  - stage: Deploy
+    displayName: 'Deploy Stage'
+    dependsOn: Test
+    jobs:
+      - template: jobs/deploy-job.yml
+        parameters:
+          environment: 'production'

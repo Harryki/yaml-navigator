@@ -1,0 +1,4 @@
+variables:
+  nodeVersion: '18.x'
+  buildConfiguration: 'Release'
+  artifactName: 'drop'

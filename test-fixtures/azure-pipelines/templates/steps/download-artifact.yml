@@ -1,0 +1,13 @@
+parameters:
+  - name: artifactName
+    type: string
+    default: 'drop'
+
+steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      buildType: 'current'
+      downloadType: 'single'
+      artifactName: ${{ parameters.artifactName }}
+      downloadPath: '$(System.ArtifactsDirectory)'
+    displayName: 'Download artifact: ${{ parameters.artifactName }}'

@@ -1,0 +1,8 @@
+trigger:
+  - main
+
+extends:
+  template: templates/base-pipeline.yml
+  parameters:
+    buildConfiguration: 'Release'
+    deployEnvironment: 'production'

@@ -1,0 +1,11 @@
+parameters:
+  - name: artifactName
+    type: string
+    default: 'drop'
+
+steps:
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: ${{ parameters.artifactName }}
+    displayName: 'Publish artifact: ${{ parameters.artifactName }}'

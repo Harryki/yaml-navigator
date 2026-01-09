@@ -1,0 +1,20 @@
+parameters:
+  - name: buildConfiguration
+    type: string
+    default: 'Release'
+
+jobs:
+  - job: Build
+    displayName: 'Build Application'
+    steps:
+      - template: ../templates/steps/setup-node.yml
+
+      - script: npm install
+        displayName: 'Install dependencies'
+
+      - script: npm run build -- --configuration ${{ parameters.buildConfiguration }}
+        displayName: 'Build project'
+
+      - template: ../templates/steps/publish-artifact.yml
+        parameters:
+          artifactName: 'build-output'

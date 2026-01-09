@@ -1,0 +1,14 @@
+jobs:
+  - job: Test
+    displayName: 'Run Tests'
+    steps:
+      - template: ../templates/steps/setup-node.yml
+
+      - script: npm install
+        displayName: 'Install dependencies'
+
+      - script: npm test
+        displayName: 'Run unit tests'
+
+      - script: npm run test:e2e
+        displayName: 'Run E2E tests'
